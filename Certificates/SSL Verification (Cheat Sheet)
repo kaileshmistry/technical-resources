@@ -1,0 +1,53 @@
+# SSL Demo
+## Verify Certs from Public CAs
+Verify certificate
+* curl -v https://nextcloud.shakey.dev
+
+
+Fail on DNS Name
+* curl -v https://192.168.37.14
+
+
+Inspect the cert chain (show fiull chain)
+* openssl s_client -showcerts -connect 192.168.21.42:443
+
+
+Inspect the cert contents online
+* echo | openssl s_client -connect nextcloud.shakey.dev:443 2>/dev/null | openssl x509 -text
+
+
+## Verify certs from internal / private CAs
+Check system using an Internal CA  
+* curl -v https://nc1.lab.shakey.org
+
+
+Verify internal CA system explicitly with root ca file
+* curl --cacert ~/etc/ca.crt -v https://nc1.lab.shakey.org
+
+
+Inspect the certs offline
+* openssl s_client -showcerts -connect nc1.lab.shakey.org:443
+* Save certs to file.
+* openssl verify  ./nc.pem
+* Verify fails if root not in openssl trust store
+* openssl verify  -CAfile ~/etc/ca.crt ./nc.pem
+* Verify works if root cert explicitly set
+
+
+Ansible example
+* ansible -i ./inventory/hosts.ini -m win_ping all
+* Fails because python request library doesn’t trust windows server cert
+* openssl s_client -showcerts -connect windomain1.ad.shakey.org:5986
+* Inspect WinRM certs
+* export REQUESTS_CA_BUNDLE=~/etc/cacert.pem
+* Set env var to point to Windows system root CA
+* ansible -i ./inventory/hosts.ini -m win_ping all
+* Ansible now works
+
+
+## Configuring software to use explicit certs
+* RHEL (And most RPM software from our repos) : [4.14. Using Shared System Certificates Red Hat Enterprise Linux 7 | Red Hat Customer Portal](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-shared-system-certificates)
+* curl : use --cacert and --capath  cmdline flags or set CURL_CA_BUNDLE environment (see man curl)
+* wget use --ca-certificate and --ca-directory cmdline flags
+* Python Requests Module, set REQUESTS_CA_BUNDLE env var
+* OpenSSL use -CAfile and -CApath cmdline options
